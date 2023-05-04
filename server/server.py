@@ -86,14 +86,14 @@ def disconnect_player(player):
   if player.conn:
     player.conn.close()
   players.remove(player)
-  print('Player disconnected')
+  # print('Player disconnected')
 
 def read_players_data(global_tick):
   for player in players:
     if not player.conn and global_tick == 0:
       v = (random.randint(-100, 100), random.randint(-100, 100))
       player.change_speed(v)
-      player.update_position()
+      player.update()
       continue
 
     try:
@@ -103,7 +103,7 @@ def read_players_data(global_tick):
       player.change_speed(v)
     except:
       pass
-    player.update_position()
+    player.update()
 
 def get_players_visions():
   players_visions = [[] for i in range(len(players))]
@@ -136,45 +136,71 @@ def find_opponent(player1, player2, dist_x, dist_y, is_inverted=False):
       and
       (abs(dist_y) <= (player1.h_vision // 2) + player2.r)
     ):
-      check_absorbption(player1, player2, dist_x, dist_y)
+      check_absorption(player1, player2, dist_x, dist_y)
 
       if (not player1.conn) or (player2.r == 0):
         return ''
+      
+      dist_x_ = dist_x / player1.S
+      dist_y_ = dist_y / player1.S
 
-      x_ = str(round(-dist_x if is_inverted else dist_x))
-      y_ = str(round(-dist_y if is_inverted else dist_y))
-      r_ = str(round(player2.r))
+      x_ = str(round(-dist_x_ if is_inverted else dist_x_))
+      y_ = str(round(-dist_y_ if is_inverted else dist_y_))
+      r_ = str(round(player2.r / player1.S))
       color_ = str(player2.color)
       return x_ + ' ' + y_ + ' ' + r_ + '::' + color_
   return ''
 
-def check_absorbption(player1, player2, dist_x, dist_y):
+def check_absorption(player1, player2, dist_x, dist_y):
   if (dist_x**2 + dist_y**2)**0.5 <= player1.r and player1.r > 1.1 * player2.r:
     player1.set_radius((player1.r**2 + player2.r**2)**0.5)
     player2.r = 0
 
 def add_player(conn, addr):
+  x = random.randint(1, ROOM_WIDTH - 1)
+  y = random.randint(1, ROOM_HEIGHT - 1)
+
+  spawn = random.choice(microbes)
+
+  if spawn:
+    x = spawn.x
+    y = spawn.y
+    microbes.remove(spawn)
+
   new_player = Player(conn, addr,
-                      random.randint(1, ROOM_WIDTH - 1),
-                      random.randint(1, ROOM_HEIGHT - 1),
+                      x, y,
                       START_PLAYER_SIZE,
                       (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
   if conn:
     data_to_send = f'{START_PLAYER_SIZE}&&{new_player.color}'
     new_player.conn.send(data_to_send.encode())
+
   players.append(new_player)
 
-def add_mobs():
-  for i in range(MOBS_QUANTITY):
+def add_mobs(is_initial=False):
+  count = MOBS_QUANTITY - len(players)
+
+  for i in range(count):
+    x = random.randint(1, ROOM_WIDTH - 1)
+    y = random.randint(1, ROOM_HEIGHT - 1)
+
+    if not is_initial:
+      spawn = random.choice(microbes)
+
+      if spawn:
+        x = spawn.x
+        y = spawn.y
+        microbes.remove(spawn)
+
     new_player = Player(None, None,
-                        random.randint(1, ROOM_WIDTH - 1),
-                        random.randint(1, ROOM_HEIGHT - 1),
+                        x, y,
                         random.randint(10, 100),
                         (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
     players.append(new_player)
 
 def add_microbes():
-  for i in range(MICROBES_QUANTITY):
+  count = MICROBES_QUANTITY - len(microbes)
+  for i in range(count):
     new_microbe = Microbe(random.randint(1, ROOM_WIDTH - 1),
                           random.randint(1, ROOM_HEIGHT - 1),
                           MICROBE_SIZE,
@@ -190,7 +216,7 @@ microbes = []
 is_server_works = True
 global_tick = 0
 
-add_mobs()
+add_mobs(True)
 add_microbes()
 
 while is_server_works:
@@ -198,6 +224,8 @@ while is_server_works:
 
   if global_tick == 200:
     check_new_connections()
+    add_mobs()
+    add_microbes()
 
   # Считываем данные игроков
   read_players_data(global_tick)
@@ -206,7 +234,7 @@ while is_server_works:
   players_visions = get_players_visions()
   messages = ['' for i in range(len(players))]
   for i in range(len(players)):
-    player_r_ = str(round(players[i].r))
+    player_r_ = str(round(players[i].r / players[i].S))
     messages[i] = f'<{player_r_}**{"&&".join(players_visions[i])}>'
 
   # Отправляем всем новое состояние игры

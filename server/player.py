@@ -9,6 +9,10 @@ class Player():
     self.r = r
     self.color = color
 
+    self.window_width = 800
+    self.window_height = 600
+
+    self.S = 1
     self.w_vision = 800
     self.h_vision = 600
 
@@ -27,7 +31,7 @@ class Player():
       new_v =  ((v[0] / len_v) * self.abs_speed, (v[1] / len_v) * self.abs_speed)
       self.speed_x, self.speed_y = new_v[0], new_v[1]
 
-  def update_position(self):
+  def update(self):
     new_x = self.x + self.speed_x
     new_y = self.y + self.speed_y
 
@@ -36,6 +40,32 @@ class Player():
 
     if 0 < new_y < ROOM_HEIGHT:
       self.y = new_y
+
+    if self.r >= 100:
+      self.r -= self.r / 18000
+
+    if not self.conn:
+      return
+
+    if (self.r >= self.w_vision / 4) or (self.r >= self.h_vision / 4):
+      if (self.w_vision < ROOM_WIDTH) or (self.h_vision < ROOM_HEIGHT):
+        self.S *= 2
+        w_vision_ = self.window_width * self.S
+        h_vision_ = self.window_height * self.S
+        if (w_vision_ > ROOM_WIDTH):
+          self.w_vision = ROOM_WIDTH
+        else:
+          self.w_vision = w_vision_
+
+        if (h_vision_ > ROOM_WIDTH):
+          self.h_vision = ROOM_WIDTH
+        else:
+          self.h_vision = h_vision_
+
+    if (self.r < self.w_vision / 8) and (self.r < self.h_vision) and self.S > 1:
+      self.S = self.S // 2
+      self.w_vision = self.window_width * self.S
+      self.h_vision = self.window_height * self.S
 
   def set_radius(self, r):
     self.r = r
