@@ -8,19 +8,30 @@ class Player():
     self.y = y
     self.r = r
     self.color = color
+    self.name = 'Mob'
 
     self.window_width = 800
     self.window_height = 600
 
     self.S = 1
+    self.diff_S = 1
     self.w_vision = 800
     self.h_vision = 600
 
     self.errors_count = 0
+    self.ready = False
 
     self.abs_speed = 30 / (self.r**0.5)
     self.speed_x = 0
     self.speed_y = 0
+
+  def set_options(self, data):
+    name, window_width, window_height = data[1:-1].split('&&')
+    self.name = name
+    self.window_width = int(window_width)
+    self.window_height = int(window_height)
+    self.w_vision = int(window_width)
+    self.h_vision = int(window_height)
 
   def change_speed(self, v):
     if v == (0, 0):
@@ -50,17 +61,17 @@ class Player():
     if (self.r >= self.w_vision / 4) or (self.r >= self.h_vision / 4):
       if (self.w_vision < ROOM_WIDTH) or (self.h_vision < ROOM_HEIGHT):
         self.S *= 2
-        w_vision_ = self.window_width * self.S
-        h_vision_ = self.window_height * self.S
-        if (w_vision_ > ROOM_WIDTH):
-          self.w_vision = ROOM_WIDTH
-        else:
-          self.w_vision = w_vision_
+        self.w_vision = self.window_width * self.S
+        self.h_vision = self.window_height * self.S
+        # if (w_vision_ > ROOM_WIDTH):
+        #   self.w_vision = ROOM_WIDTH
+        # else:
+        #   self.w_vision = w_vision_
 
-        if (h_vision_ > ROOM_WIDTH):
-          self.h_vision = ROOM_WIDTH
-        else:
-          self.h_vision = h_vision_
+        # if (h_vision_ > ROOM_WIDTH):
+        #   self.h_vision = ROOM_WIDTH
+        # else:
+        #   self.h_vision = h_vision_
 
     if (self.r < self.w_vision / 8) and (self.r < self.h_vision) and self.S > 1:
       self.S = self.S // 2

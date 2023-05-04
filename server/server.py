@@ -50,7 +50,7 @@ def create_main_socket():
 
 def send_all():
   for i in range(len(players)):
-    if not players[i].conn:
+    if not players[i].conn or not players[i].ready:
       continue
 
     try:
@@ -98,9 +98,15 @@ def read_players_data(global_tick):
 
     try:
       data = player.conn.recv(2048).decode()
-      # print('Received data:', data)
-      v = extract_last_vector(data)
-      player.change_speed(v)
+      if data[0] == '!':
+        player.ready = True
+      elif data[0] == '.' and data[-1] == '.':
+        player.set_options(data)
+        data_to_send = f'{START_PLAYER_SIZE}&&{player.color}'
+        player.conn.send(data_to_send.encode())
+      else: 
+        v = extract_last_vector(data)
+        player.change_speed(v)
     except:
       pass
     player.update()
@@ -148,7 +154,20 @@ def find_opponent(player1, player2, dist_x, dist_y, is_inverted=False):
       y_ = str(round(-dist_y_ if is_inverted else dist_y_))
       r_ = str(round(player2.r / player1.S))
       color_ = str(player2.color)
-      return x_ + ' ' + y_ + ' ' + r_ + '::' + color_
+
+      name_ = ''
+
+      try:
+        name_ = player2.name
+      except:
+        pass
+
+      result = f'{x_} {y_} {r_}::{color_}'
+
+      if (player2.r >= 30 * player1.S) and name_:
+        result += f'::{name_}'
+
+      return result
   return ''
 
 def check_absorption(player1, player2, dist_x, dist_y):
@@ -171,9 +190,6 @@ def add_player(conn, addr):
                       x, y,
                       START_PLAYER_SIZE,
                       (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
-  if conn:
-    data_to_send = f'{START_PLAYER_SIZE}&&{new_player.color}'
-    new_player.conn.send(data_to_send.encode())
 
   players.append(new_player)
 
