@@ -16,6 +16,8 @@ def init_pygame():
   return screen, clock
 
 def is_closed():
+  if is_remote_server:
+    return False
   for event in pygame.event.get():
     if event.type == pygame.QUIT:
       pygame.quit()
