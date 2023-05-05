@@ -59,7 +59,6 @@ def draw_opponents(opponents_data):
     r_ = int(geometry[2])
     color_ = tuple(map(int, re.findall(r'-?\d+', color_text)))
 
-    # Проверяем, находится ли игрок в пределах экрана
     # if (0 <= x_ < WIDTH) and (0 <= y_ < HEIGHT):
     #   pygame.draw.circle(screen, color_, (x_, y_), r_)
 
@@ -112,9 +111,9 @@ def main():
 
     # Получаем данные от сервера
     try:
-      data = sock.recv(8192).decode()
+      data = sock.recv(2**20).decode()
     except:
-      continue
+      return
 
     # Обрабатываем данные от сервера
     my_r = parse_data(data)
@@ -122,8 +121,9 @@ def main():
       player.set_radius(int(my_r))
 
     # Рисуем новое состояние игрового поля
-    pygame.draw.circle(screen, player.color, (WIDTH // 2, HEIGHT // 2), player.r)
-    write_name(WIDTH // 2, HEIGHT // 2, player.r, my_name)
+    if player.r:
+      pygame.draw.circle(screen, player.color, (WIDTH // 2, HEIGHT // 2), player.r)
+      write_name(WIDTH // 2, HEIGHT // 2, player.r, my_name)
     pygame.display.update()
  
 if __name__ == '__main__':

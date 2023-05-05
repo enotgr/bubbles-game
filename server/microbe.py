@@ -4,3 +4,6 @@ class Microbe():
     self.y = y
     self.r = r
     self.color = color
+
+  def set_radius(self, r):
+    self.r = r

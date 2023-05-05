@@ -1,4 +1,4 @@
-SERVER = 'localhost'
+SERVER_IP = '0.0.0.0'
 PORT = 5555
 
 ROOM_WIDTH, ROOM_HEIGHT = 4000, 4000

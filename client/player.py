@@ -1,5 +1,4 @@
 import re
-import pygame
 
 from consts import WIDTH, HEIGHT
 

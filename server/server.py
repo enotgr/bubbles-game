@@ -3,13 +3,15 @@ import pygame
 import random
 import re
 
-from consts import ROOM_WIDTH, ROOM_HEIGHT, SERVER_WINDOW_WIDTH, SERVER_WINDOW_HEIGHT, SERVER, PORT, FPS, START_PLAYER_SIZE, MOBS_QUANTITY, MICROBE_SIZE, MICROBES_QUANTITY
+from consts import ROOM_WIDTH, ROOM_HEIGHT, SERVER_WINDOW_WIDTH, SERVER_WINDOW_HEIGHT, SERVER_IP, PORT, FPS, START_PLAYER_SIZE, MOBS_QUANTITY, MICROBE_SIZE, MICROBES_QUANTITY
 from player import Player
 from microbe import Microbe
 
 def init_pygame():
   pygame.init()
-  screen = pygame.display.set_mode((SERVER_WINDOW_WIDTH, SERVER_WINDOW_HEIGHT))
+  screen = None
+  if not is_remote_server:
+    screen = pygame.display.set_mode((SERVER_WINDOW_WIDTH, SERVER_WINDOW_HEIGHT))
   clock = pygame.time.Clock()
   return screen, clock
 
@@ -40,7 +42,7 @@ def create_main_socket():
   main_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
   try:
-    main_socket.bind((SERVER, PORT))
+    main_socket.bind((SERVER_IP, PORT))
   except socket.error as e:
     print(e)
 
@@ -64,7 +66,12 @@ def send_all():
 
 def remove_dead():
   for player in players:
-    if (player.errors_count == 500) or (player.r == 0):
+    if not player.r:
+      if player.conn:
+        player.dead += 1
+      else:
+        player.dead += 300
+    if (player.errors_count == 500) or (player.dead >= 300):
       disconnect_player(player)
 
   for microbe in microbes:
@@ -173,7 +180,7 @@ def find_opponent(player1, player2, dist_x, dist_y, is_inverted=False):
 def check_absorption(player1, player2, dist_x, dist_y):
   if (dist_x**2 + dist_y**2)**0.5 <= player1.r and player1.r > 1.1 * player2.r:
     player1.set_radius((player1.r**2 + player2.r**2)**0.5)
-    player2.r = 0
+    player2.set_radius(0)
 
 def add_player(conn, addr):
   x = random.randint(1, ROOM_WIDTH - 1)
@@ -193,7 +200,7 @@ def add_player(conn, addr):
 
   players.append(new_player)
 
-def add_mobs(is_initial=False):
+def add_mobs(is_initial=True):
   count = MOBS_QUANTITY - len(players)
 
   for i in range(count):
@@ -222,6 +229,8 @@ def add_microbes():
                           MICROBE_SIZE,
                           (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
     microbes.append(new_microbe)
+
+is_remote_server = True
 
 screen, clock = init_pygame()
 main_socket = create_main_socket()
@@ -262,9 +271,9 @@ while is_server_works:
   # Отрисовываем комнату
   if is_closed():
     is_server_works = False
-  draw_players()
-
-  screen.fill((0, 0, 0))
+  if not is_remote_server:
+    draw_players()
+    screen.fill((0, 0, 0))
 
   if global_tick == 200:
     global_tick = 0

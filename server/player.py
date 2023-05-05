@@ -19,6 +19,7 @@ class Player():
     self.h_vision = 600
 
     self.errors_count = 0
+    self.dead = 0
     self.ready = False
 
     self.abs_speed = 30 / (self.r**0.5)
@@ -63,15 +64,6 @@ class Player():
         self.S *= 2
         self.w_vision = self.window_width * self.S
         self.h_vision = self.window_height * self.S
-        # if (w_vision_ > ROOM_WIDTH):
-        #   self.w_vision = ROOM_WIDTH
-        # else:
-        #   self.w_vision = w_vision_
-
-        # if (h_vision_ > ROOM_WIDTH):
-        #   self.h_vision = ROOM_WIDTH
-        # else:
-        #   self.h_vision = h_vision_
 
     if (self.r < self.w_vision / 8) and (self.r < self.h_vision) and self.S > 1:
       self.S = self.S // 2
@@ -80,4 +72,7 @@ class Player():
 
   def set_radius(self, r):
     self.r = r
-    self.abs_speed = 30 / (self.r**0.5)
+    if self.r:
+      self.abs_speed = 30 / (self.r**0.5)
+    else:
+      self.abs_speed = 0
