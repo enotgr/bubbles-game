@@ -32,7 +32,7 @@ def get_last_complete_package(data):
   pattern = r'<([^>]+)>'
   matches = re.findall(pattern, data)
   if matches:
-    last_match = matches[-1]
+    last_match = matches[0]
     return last_match
   else:
     return ''
@@ -112,6 +112,8 @@ def main():
     # Получаем данные от сервера
     try:
       data = sock.recv(2**20).decode()
+      if not data:
+        break
     except:
       return
 
